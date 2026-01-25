@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, maximum-scale=1, initial-scale=1, user-scalable=0" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Meal Bolus Assistant</title>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/images/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/images/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/images/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/images/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/images/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/images/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/images/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="/images/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/images/android-chrome-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="/images/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="shortcut icon" href="/images/favicon.ico">
+    <meta name="msapplication-TileColor" content="#00a300">
+    <meta name="msapplication-TileImage" content="/images/mstile-144x144.png">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="theme-color" content="#333333">
+
+    <link rel="preload" href="/css/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/css/meal-bolus.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="/css/ui-darkness/jquery-ui.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <%- include('preloadCSS')%>
+  </head>
+  <body>
+    <%- include('partials/toolbar') %>
+
+    <div id="centerMessagePanel" class="mb-loading">
+      <div class="mb-loading-card">
+        <div class="mb-loading-title">Loading Nightscout data</div>
+        <div id="loadingMessageText" class="mb-loading-subtitle">Connecting to server</div>
+      </div>
+    </div>
+
+    <main id="meal-bolus-app">
+      <section class="mb-card mb-summary">
+        <div class="mb-card-header">
+          <h2 class="translate">Glucose & Trend</h2>
+          <div id="mb_status_badge" class="mb-badge">--</div>
+        </div>
+        <div class="mb-grid mb-summary-grid">
+          <div class="mb-glucose">
+            <div class="mb-glucose-value">
+              <span id="mb_current_bg">--</span>
+              <span id="mb_bg_units" class="mb-units">mg/dL</span>
+            </div>
+            <div class="mb-glucose-meta">
+              <div><span class="translate">Trend</span>: <span id="mb_trend_label">--</span></div>
+              <div><span class="translate">Delta</span>: <span id="mb_delta_value">--</span></div>
+              <div><span class="translate">Updated</span>: <span id="mb_last_update">--</span></div>
+            </div>
+          </div>
+          <div class="mb-insulin-onboard">
+            <div class="mb-stat">
+              <span class="mb-stat-label translate">IOB</span>
+              <span class="mb-stat-value" id="mb_iob_value">--</span>
+            </div>
+            <div class="mb-stat">
+              <span class="mb-stat-label translate">COB</span>
+              <span class="mb-stat-value" id="mb_cob_value">--</span>
+            </div>
+            <div class="mb-stat">
+              <span class="mb-stat-label translate">Basal</span>
+              <span class="mb-stat-value" id="mb_basal_value">--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-card mb-profile">
+        <h2 class="translate">Pump Settings</h2>
+        <div class="mb-grid mb-profile-grid">
+          <div><span class="translate">Profile</span>: <span id="mb_profile_name">--</span></div>
+          <div><span class="translate">Target range</span>: <span id="mb_target_range">--</span></div>
+          <div><span class="translate">Carb ratio</span>: <span id="mb_ic_value">--</span></div>
+          <div><span class="translate">Sensitivity</span>: <span id="mb_isf_value">--</span></div>
+        </div>
+      </section>
+
+      <section class="mb-card mb-meal">
+        <h2 class="translate">Meal Input</h2>
+        <div class="mb-grid mb-meal-grid">
+          <div class="mb-photo">
+            <label for="mb_meal_photo" class="translate">Meal photo (optional)</label>
+            <input id="mb_meal_photo" type="file" accept="image/*" capture="environment">
+            <div class="mb-photo-preview">
+              <img id="mb_photo_preview" alt="Meal photo preview">
+            </div>
+            <button id="mb_analyze_photo" type="button" class="mb-secondary translate">Analyze photo</button>
+            <div id="mb_photo_status" class="mb-hint"></div>
+          </div>
+          <div class="mb-meal-form">
+            <label for="mb_meal_description" class="translate">Meal description</label>
+            <input id="mb_meal_description" type="text" placeholder="e.g. turkey sandwich and apple">
+            <div class="mb-form-row">
+              <label for="mb_portions" class="translate">Portions</label>
+              <input id="mb_portions" type="number" min="0.25" step="0.25" value="1">
+            </div>
+            <div class="mb-macros">
+              <div>
+                <label for="mb_carbs" class="translate">Carbs (g)</label>
+                <input id="mb_carbs" type="number" min="0" step="1">
+              </div>
+              <div>
+                <label for="mb_protein" class="translate">Protein (g)</label>
+                <input id="mb_protein" type="number" min="0" step="1">
+              </div>
+              <div>
+                <label for="mb_fat" class="translate">Fat (g)</label>
+                <input id="mb_fat" type="number" min="0" step="1">
+              </div>
+            </div>
+            <div class="mb-meal-actions">
+              <button id="mb_estimate_text" type="button" class="mb-primary translate">Estimate from description</button>
+              <button id="mb_clear_meal" type="button" class="mb-secondary translate">Clear</button>
+            </div>
+            <div class="mb-quickpick">
+              <label for="mb_quickpick" class="translate">Quick picks</label>
+              <div class="mb-quickpick-row">
+                <select id="mb_quickpick"></select>
+                <button id="mb_add_quickpick" type="button" class="mb-secondary translate">Add</button>
+              </div>
+            </div>
+            <div class="mb-suggestions">
+              <div class="mb-suggestions-title translate">Suggested matches</div>
+              <div id="mb_match_results" class="mb-suggestion-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mb-card mb-suggestion">
+        <div class="mb-suggestion-header">
+          <h2 class="translate">Suggested Bolus</h2>
+          <div class="mb-total">
+            <span id="mb_total_insulin">0.00</span>
+            <span class="mb-units">U</span>
+          </div>
+        </div>
+        <div class="mb-grid mb-suggestion-grid">
+          <div class="mb-breakdown">
+            <div><span class="translate">Carb bolus</span>: <span id="mb_carb_bolus">0.00</span> U</div>
+            <div><span class="translate">BG correction</span>: <span id="mb_bg_correction">0.00</span> U</div>
+            <div><span class="translate">Trend adjustment</span>: <span id="mb_trend_adjustment">0.00</span> U</div>
+            <div><span class="translate">IOB adjustment</span>: <span id="mb_iob_adjustment">0.00</span> U</div>
+            <div><span class="translate">COB adjustment</span>: <span id="mb_cob_adjustment">0.00</span> U</div>
+            <div><span class="translate">Rounding</span>: <span id="mb_rounding">0.00</span> U</div>
+          </div>
+          <div class="mb-options">
+            <label><input type="checkbox" id="mb_use_iob" checked> <span class="translate">Use IOB</span></label>
+            <label><input type="checkbox" id="mb_use_cob"> <span class="translate">Use COB</span></label>
+            <label><input type="checkbox" id="mb_use_trend" checked> <span class="translate">Adjust for trend</span></label>
+            <label for="mb_trend_horizon" class="translate">Trend horizon</label>
+            <select id="mb_trend_horizon">
+              <option value="15">15 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="45">45 min</option>
+            </select>
+            <label for="mb_bg_input" class="translate">Glucose used</label>
+            <div class="mb-bg-input-row">
+              <input id="mb_bg_input" type="number" min="0" step="1">
+              <span id="mb_bg_input_units" class="mb-units">mg/dL</span>
+              <button id="mb_use_current_bg" type="button" class="mb-secondary translate">Use current</button>
+            </div>
+          </div>
+        </div>
+        <div id="mb_suggestion_note" class="mb-note"></div>
+        <div class="mb-actions">
+          <button id="mb_copy_summary" type="button" class="mb-secondary translate">Copy summary</button>
+          <button id="mb_reset_suggestion" type="button" class="mb-secondary translate">Reset inputs</button>
+        </div>
+        <div class="mb-disclaimer">
+          <strong class="translate">Note</strong>:
+          <span class="translate">This tool provides an estimate. Always confirm with your care team before dosing.</span>
+        </div>
+      </section>
+    </main>
+
+    <%- include('partials/authentication-status') %>
+
+    <script src="<%= locals.bundle %>/js/bundle.app.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/mealinit.js"></script>
+  </body>
+</html>
