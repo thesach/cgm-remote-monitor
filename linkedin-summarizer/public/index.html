@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataPulse AI — Top Data & AI Posts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <span class="logo-text">DataPulse <span class="logo-ai">AI</span></span>
+      </div>
+      <p class="header-tagline">Top Data &amp; AI insights, summarized by Claude</p>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="refreshBtn" title="Refresh feed">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Refresh
+        </button>
+        <button class="btn btn-primary" id="openSummarizeModal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          Summarize Post
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Categories</h3>
+        <div id="categoryList" class="category-list">
+          <button class="category-btn active" data-category="all">All Topics</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-title">Sources</h3>
+        <ul class="source-list">
+          <li><span class="source-dot" style="background:#0077b5"></span>VentureBeat AI</li>
+          <li><span class="source-dot" style="background:#a8132a"></span>MIT Technology Review</li>
+          <li><span class="source-dot" style="background:#1da462"></span>Towards Data Science</li>
+          <li><span class="source-dot" style="background:#ff6900"></span>KDnuggets</li>
+          <li><span class="source-dot" style="background:#76b900"></span>NVIDIA Blog</li>
+          <li><span class="source-dot" style="background:#412991"></span>OpenAI Blog</li>
+          <li><span class="source-dot" style="background:#4285f4"></span>Google DeepMind</li>
+          <li><span class="source-dot" style="background:#e63946"></span>AI News</li>
+        </ul>
+      </div>
+
+      <div class="sidebar-section sidebar-about">
+        <p>Powered by <strong>Claude AI</strong> — summaries generated automatically from top Data &amp; AI publications.</p>
+      </div>
+    </aside>
+
+    <!-- Feed -->
+    <main class="feed">
+      <!-- Category Pills (Mobile) -->
+      <div class="category-pills-mobile" id="categoryPillsMobile"></div>
+
+      <!-- Status bar -->
+      <div class="feed-status" id="feedStatus">
+        <div class="status-left">
+          <span id="postCount" class="post-count">Loading...</span>
+        </div>
+        <div class="status-right">
+          <span class="updated-label">Last updated: <span id="lastUpdated">—</span></span>
+        </div>
+      </div>
+
+      <!-- Post cards -->
+      <div id="postFeed" class="post-feed">
+        <div class="skeleton-wrap">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+      </div>
+
+      <!-- Load more -->
+      <div class="load-more-wrap" id="loadMoreWrap" style="display:none">
+        <button class="btn btn-load-more" id="loadMoreBtn">Load More</button>
+      </div>
+
+      <!-- Empty state -->
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="empty-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <h3>No posts found</h3>
+        <p>Try a different category or refresh the feed.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Summarize Modal -->
+  <div class="modal-overlay" id="modalOverlay" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <h2 id="modalTitle">Summarize a LinkedIn Post</h2>
+        <button class="modal-close" id="closeModal" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Paste a LinkedIn post URL or the full post text to get an AI-generated summary.</p>
+
+        <div class="form-tabs">
+          <button class="form-tab active" data-tab="url">By URL</button>
+          <button class="form-tab" data-tab="text">By Text</button>
+        </div>
+
+        <div id="tab-url" class="tab-content active">
+          <div class="form-group">
+            <label>Article / LinkedIn Post URL</label>
+            <input type="url" id="postUrl" class="form-input" placeholder="https://www.linkedin.com/posts/..." />
+          </div>
+          <div class="form-group">
+            <label>Title <span class="optional">(optional)</span></label>
+            <input type="text" id="postTitleUrl" class="form-input" placeholder="Post title" />
+          </div>
+        </div>
+
+        <div id="tab-text" class="tab-content">
+          <div class="form-group">
+            <label>Title <span class="optional">(optional)</span></label>
+            <input type="text" id="postTitleText" class="form-input" placeholder="Post title" />
+          </div>
+          <div class="form-group">
+            <label>Post Text</label>
+            <textarea id="postText" class="form-input form-textarea" placeholder="Paste the LinkedIn post content here..."></textarea>
+          </div>
+        </div>
+
+        <div id="summaryResult" class="summary-result" style="display:none">
+          <div class="summary-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Claude Summary
+          </div>
+          <p id="summaryText"></p>
+          <a id="summaryLink" href="#" target="_blank" rel="noopener noreferrer" class="read-more-link" style="display:none">Read full article &rarr;</a>
+        </div>
+
+        <div id="summaryError" class="summary-error" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span id="errorText">Something went wrong. Please try again.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="clearModal">Clear</button>
+        <button class="btn btn-primary" id="submitSummarize">
+          <span id="submitLabel">Generate Summary</span>
+          <div class="btn-spinner" id="btnSpinner" style="display:none"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
